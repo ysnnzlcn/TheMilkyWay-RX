@@ -5,15 +5,16 @@
 //  Created by Yasin Nazlican on 21.11.2021.
 //
 
-import Combine
 import Core
 import Home
 import XCTest
+import RxSwift
+import RxCocoa
 
 final class ImageDetailsViewModelTests: XCTestCase {
 
     private var sut: ImageDetailsViewModel!
-    private var cancellable: AnyCancellable?
+    private var disposeBag = DisposeBag()
     private var selectedImage = NASAImageResponse.mock.collection.items.first!
 
     override func setUp() {
@@ -25,29 +26,32 @@ final class ImageDetailsViewModelTests: XCTestCase {
     }
 
     override func tearDown() {
-        cancellable?.cancel()
-        cancellable = nil
+        disposeBag = DisposeBag()
         sut = nil
         super.tearDown()
     }
 
     func test_whenDidLoad_thenCheckForStateAndDataSource() {
-        // when
-        sut.didLoad()
-
         // then
         XCTAssertEqual(sut.imageTitle, selectedImage.info.first!.title)
 
-        cancellable = sut.$items
-            .receive(on: RunLoop.main)
-            .sink(receiveValue: { items in
-                /// Expected item count tests
-                XCTAssertEqual(items.count, 3)
+        /// Expected item count tests
+        let items = sut.items.value
+        XCTAssertEqual(items.count, 3)
 
-                // Cell type check tests
-                XCTAssertEqual(items[0].cell, .imageHeaderCell(nil))
-                XCTAssertEqual(items[1].cell, .plainTextCell(.init()))
-                XCTAssertEqual(items[2].cell, .plainTextCell(.init()))
-            })
+        // Cell type check tests
+        XCTAssertTrue(areImageDetailsCellTypeEqual(items[0], .imageHeaderCell(nil)))
+        XCTAssertTrue(areImageDetailsCellTypeEqual(items[1], .plainTextCell(.init())))
+        XCTAssertTrue(areImageDetailsCellTypeEqual(items[2], .plainTextCell(.init())))
+    }
+
+    private func areImageDetailsCellTypeEqual(_ first: ImageDetailsCellType, _ second: ImageDetailsCellType) -> Bool {
+        switch (first, second) {
+        case (.imageHeaderCell, .imageHeaderCell), (.plainTextCell, .plainTextCell):
+            return true
+
+        default:
+            return false
+        }
     }
 }
