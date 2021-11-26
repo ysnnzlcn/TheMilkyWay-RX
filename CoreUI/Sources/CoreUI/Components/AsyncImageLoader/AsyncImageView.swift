@@ -5,14 +5,15 @@
 //  Created by Yasin Nazlican on 18.11.2021.
 //
 
-import Combine
 import UIKit
+import RxSwift
+import RxCocoa
 
 public class AsyncImageView: UIImageView {
 
     // MARK: Private Variables
 
-    private var cancellable: AnyCancellable?
+    private var disposeBag = DisposeBag()
 
     // MARK: Public Variables
 
@@ -31,17 +32,21 @@ public class AsyncImageView: UIImageView {
         }
 
         /// Send request to get image.
-        cancellable = URLSession.shared.dataTaskPublisher(for: url)
-            .map { UIImage(data: $0.data) }
-            .replaceError(with: nil)
-            .handleEvents(
-                receiveSubscription: { [weak self] _ in self?.onStart() },
-                receiveOutput: { cache[url] = $0 },
-                receiveCompletion: { [weak self] _ in self?.onFinish() },
-                receiveCancel: { [weak self] in self?.onFinish() }
-            )
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.image = $0 }
+        onStart()
+        URLSession.shared
+            .rx
+            .response(request: URLRequest(url: url))
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] (_, data) in
+                let image = UIImage(data: data)
+                self?.image = image
+                if let image = image {
+                    cache[url] = image
+                }
+            }, onCompleted: { [weak self] in
+                self?.onFinish()
+            })
+            .disposed(by: disposeBag)
     }
 
     // MARK: Private Methods
@@ -52,13 +57,5 @@ public class AsyncImageView: UIImageView {
 
     private func onFinish() {
         isLoading = false
-    }
-
-    private func cancel() {
-        cancellable?.cancel()
-    }
-
-    deinit {
-        cancel()
     }
 }
