@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		84174E57274E94B900D01DC8 /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = 84174E56274E94B900D01DC8 /* RxCocoa */; };
-		84174E59274E94B900D01DC8 /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 84174E58274E94B900D01DC8 /* RxSwift */; };
 		84877BF1274684DA000311FC /* Home in Frameworks */ = {isa = PBXBuildFile; productRef = 84877BF0274684DA000311FC /* Home */; };
 		84877BF427468B86000311FC /* CoreUI in Frameworks */ = {isa = PBXBuildFile; productRef = 84877BF327468B86000311FC /* CoreUI */; };
 		84877BF627469003000311FC /* HomeCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84877BF527469003000311FC /* HomeCoordinator.swift */; };
@@ -66,8 +64,6 @@
 			files = (
 				84F4583027455D1300A8A7C2 /* Core in Frameworks */,
 				84877BF1274684DA000311FC /* Home in Frameworks */,
-				84174E59274E94B900D01DC8 /* RxSwift in Frameworks */,
-				84174E57274E94B900D01DC8 /* RxCocoa in Frameworks */,
 				84877BF427468B86000311FC /* CoreUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -187,8 +183,6 @@
 				84F4582F27455D1300A8A7C2 /* Core */,
 				84877BF0274684DA000311FC /* Home */,
 				84877BF327468B86000311FC /* CoreUI */,
-				84174E56274E94B900D01DC8 /* RxCocoa */,
-				84174E58274E94B900D01DC8 /* RxSwift */,
 			);
 			productName = TheMilkyWay;
 			productReference = 848A45712745567200F3D2CE /* TheMilkyWay.app */;
@@ -263,7 +257,6 @@
 			);
 			mainGroup = 848A45682745567200F3D2CE;
 			packageReferences = (
-				84174E55274E94B900D01DC8 /* XCRemoteSwiftPackageReference "RxSwift" */,
 			);
 			productRefGroup = 848A45722745567200F3D2CE /* Products */;
 			projectDirPath = "";
@@ -665,28 +658,7 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		84174E55274E94B900D01DC8 /* XCRemoteSwiftPackageReference "RxSwift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/ReactiveX/RxSwift.git";
-			requirement = {
-				kind = exactVersion;
-				version = 6.2.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
 /* Begin XCSwiftPackageProductDependency section */
-		84174E56274E94B900D01DC8 /* RxCocoa */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 84174E55274E94B900D01DC8 /* XCRemoteSwiftPackageReference "RxSwift" */;
-			productName = RxCocoa;
-		};
-		84174E58274E94B900D01DC8 /* RxSwift */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 84174E55274E94B900D01DC8 /* XCRemoteSwiftPackageReference "RxSwift" */;
-			productName = RxSwift;
-		};
 		84877BF0274684DA000311FC /* Home */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Home;

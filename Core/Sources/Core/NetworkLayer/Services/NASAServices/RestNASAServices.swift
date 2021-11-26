@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import Combine
+import RxSwift
 
 public class RestNASAServices: NASAServices {
 
@@ -22,7 +22,7 @@ public class RestNASAServices: NASAServices {
 
     // MARK: Protocol Conformance
 
-    public func searchImages() -> AnyPublisher<NASAImageResponse, NetworkError> {
+    public func searchImages() -> Single<NASAImageResponse> {
         let target: NASANetworkTarget = .searchImages(key: "\"\"") /// "" means search for all.
         return networkManager.sendRequest(type: NASAImageResponse.self, target: target)
     }

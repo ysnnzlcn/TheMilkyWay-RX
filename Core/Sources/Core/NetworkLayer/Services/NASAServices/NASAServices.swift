@@ -6,9 +6,9 @@
 //
 
 import Foundation
-import Combine
+import RxSwift
 
 public protocol NASAServices {
 
-    func searchImages() -> AnyPublisher<NASAImageResponse, NetworkError>
+    func searchImages() -> Single<NASAImageResponse>
 }

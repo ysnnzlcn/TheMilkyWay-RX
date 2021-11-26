@@ -5,13 +5,13 @@
 //  Created by Yasin Nazlican on 18.11.2021.
 //
 
-import Combine
 import Core
+import RxSwift
+import RxCocoa
 
 public enum HomeViewModelState {
 
     case toggleLoading(_ show: Bool)
-    case itemSelected(_ item: NASAImage)
     case error(_ error: String)
 }
 
@@ -20,12 +20,12 @@ public final class HomeViewModel {
     // MARK: Private Variables
 
     private let service: NASAServices
-    private var cancellables = Set<AnyCancellable>()
+    private var disposeBag = DisposeBag()
 
     // MARK: Public Variables
 
-    @Published public private(set) var items = [NASAImage]()
-    @Published public private(set) var state: HomeViewModelState = .toggleLoading(false)
+    public private(set) var items: PublishSubject<[NASAImage]> = PublishSubject()
+    public private(set) var state: PublishSubject<HomeViewModelState> = PublishSubject()
 
     // MARK: Life-Cycle
 
@@ -40,7 +40,7 @@ public final class HomeViewModel {
     }
 
     public func itemSelected(at index: Int) {
-        state = .itemSelected(items[index])
+//        state = .itemSelected(items[index])
     }
 }
 
@@ -49,20 +49,16 @@ public final class HomeViewModel {
 extension HomeViewModel {
 
     private func getImages() {
-        state = .toggleLoading(true)
+        state.onNext(.toggleLoading(true))
         service
             .searchImages()
-            .sink(receiveCompletion: { [weak self] completion in
-                switch completion {
-                case .failure(let error):
-                    self?.state = .error(error.customDescription)
-
-                case .finished:
-                    self?.state = .toggleLoading(false)
-                }
-            }, receiveValue: { [weak self] response in
-                self?.items = response.collection.items
+            .subscribe(onSuccess: { [weak self] response in
+                self?.state.onNext(.toggleLoading(false))
+                self?.items.onNext(response.collection.items)
+            }, onFailure: { [weak self] error in
+                self?.state.onNext(.toggleLoading(false))
+                self?.state.onNext(.error((error as? NetworkError)?.customDescription ?? ""))
             })
-            .store(in: &cancellables)
+            .disposed(by: disposeBag)
     }
 }

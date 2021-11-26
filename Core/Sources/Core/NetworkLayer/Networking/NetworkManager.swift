@@ -6,7 +6,8 @@
 //
 
 import Foundation
-import Combine
+import RxSwift
+import RxCocoa
 
 public protocol Requestable: AnyObject {
 
@@ -15,7 +16,7 @@ public protocol Requestable: AnyObject {
     func sendRequest<T>(
         type: T.Type,
         target: NetworkTarget
-    ) -> AnyPublisher<T, NetworkError> where T: Decodable
+    ) -> Single<T> where T: Decodable
 }
 
 public final class NetworkManager: Requestable {
@@ -26,6 +27,9 @@ public final class NetworkManager: Requestable {
 
     // MARK: Public Read-Only
 
+    let disposeBag = DisposeBag()
+
+
     public var requestTimeout: Float { 60 }
 
     // MARK: Public Methods
@@ -33,29 +37,28 @@ public final class NetworkManager: Requestable {
     public func sendRequest<T: Decodable>(
         type: T.Type,
         target: NetworkTarget
-    ) -> AnyPublisher<T, NetworkError> {
+    ) -> Single<T> {
 
         URLSessionConfiguration.default.timeoutIntervalForRequest = TimeInterval(target.requestTimeout ?? requestTimeout)
 
         return URLSession.shared
-            .dataTaskPublisher(for: makeRequest(from: target))
-            .mapError { NetworkError.error($0) }
-            .flatMap({ [weak self] result -> AnyPublisher<T, NetworkError> in
-                guard let self = self, let urlResponse = result.response as? HTTPURLResponse else {
-                    return Fail(error: .serverError).eraseToAnyPublisher()
+            .rx
+            .response(request: makeRequest(from: target))
+            .map { (response, data) -> T in
+                guard response.isSuccessful else {
+                    /// Parse the error response
+                    throw NetworkError.internalError(try JSONDecoder().decode(NetworkErrorResponse.self, from: data))
                 }
 
-                if urlResponse.isSuccessful {
-                    return self.decode(type: T.self, result.data)
-                } else {
-                    return self.decode(type: NetworkErrorResponse.self, result.data)
-                        .flatMap({ error in
-                            Fail(error: .internalError(error)).eraseToAnyPublisher()
-                        })
-                        .eraseToAnyPublisher()
+                /// Parse the successful response
+                do {
+                    return try JSONDecoder().decode(T.self, from: data)
+                } catch let error {
+                    throw NetworkError.error(error)
                 }
-            })
-            .eraseToAnyPublisher()
+            }
+            .observe(on: MainScheduler.instance)
+            .asSingle()
     }
 
     // MARK: Private Methods
@@ -71,13 +74,6 @@ public final class NetworkManager: Requestable {
         urlRequest.allHTTPHeaderFields = target.headers ?? [:]
         urlRequest.httpBody = target.body
         return urlRequest
-    }
-
-    private func decode<T: Decodable>(type: T.Type, _ data: Data) -> AnyPublisher<T, NetworkError> {
-        return Just(data)
-            .decode(type: type, decoder: JSONDecoder())
-            .mapError { NetworkError.error($0) }
-            .eraseToAnyPublisher()
     }
 }
 

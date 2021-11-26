@@ -5,10 +5,11 @@
 //  Created by Yasin Nazlican on 18.11.2021.
 //
 
-import Combine
 import Core
 import CoreUI
 import UIKit
+import RxSwift
+import RxCocoa
 
 public protocol HomeViewControllerCoordinatorDelegate: AnyObject {
 
@@ -43,9 +44,7 @@ public final class HomeViewController: UIViewController {
     // MARK: Private Variables
 
     private let viewModel: HomeViewModel
-    private var cancellables = Set<AnyCancellable>()
-    private lazy var tableDataSource = HomeTableViewDataSource(tableView, viewModel)
-    private lazy var tableDelegate = HomeTableViewDelegate(viewModel)
+    private var disposeBag = DisposeBag()
 
     // MARK: Life-Cycle
 
@@ -61,7 +60,7 @@ public final class HomeViewController: UIViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
         setupViews()
-        setupViewModel()
+        bindViewModel()
         viewModel.didLoad()
     }
 
@@ -77,10 +76,6 @@ public final class HomeViewController: UIViewController {
         title = Constants.MainView.title
         view.backgroundColor = Constants.MainView.backgroundColor
 
-        /// Setup table view
-        tableView.dataSource = tableDataSource
-        tableView.delegate = tableDelegate
-
         /// Setup sub views
         view.addSubview(tableView)
 
@@ -88,39 +83,60 @@ public final class HomeViewController: UIViewController {
         tableView.pinToSuperView()
     }
 
-    // MARK: Setup ViewModel
+    // MARK: Bind ViewModel
 
-    private func setupViewModel() {
-        let stateValueHandler = { [weak self] (state: HomeViewModelState) in
-            guard let self = self else { return }
-            switch state {
-            case .toggleLoading(let show):
-                GlobalLoadingView.simple().toggle(show: show, on: self)
+    private func bindViewModel() {
+        bindTableView()
+        bindState()
+    }
 
-            case .itemSelected(let item):
-                self.delegate?.homeViewControllerDidSelect(self, image: item)
-                self.updateNavigationBarTitleStyle(largeTitles: false)
+    private func bindState() {
+        viewModel.state
+            .subscribe(onNext: { state in
+                switch state {
+                case .toggleLoading(let show):
+                    GlobalLoadingView.simple().toggle(show: show, on: self)
 
-            case .error(let error):
-                GlobalAlert.alert(
-                    title: Constants.Alert.title,
-                    message: error,
-                    action: (
-                        Constants.Alert.actionTitle,
-                        { self.viewModel.didLoad() }
-                    )
-                ).show(on: self)
-            }
-        }
-
-        viewModel.$state
-            .receive(on: RunLoop.main)
-            .sink(receiveValue: stateValueHandler)
-            .store(in: &cancellables)
+                case .error(let error):
+                    GlobalAlert.alert(
+                        title: Constants.Alert.title,
+                        message: error,
+                        action: (
+                            Constants.Alert.actionTitle,
+                            { self.viewModel.didLoad() }
+                        )
+                    ).show(on: self)
+                }
+            })
+            .disposed(by: disposeBag)
     }
 
     private func updateNavigationBarTitleStyle(largeTitles: Bool) {
         navigationController?.navigationBar.prefersLargeTitles = largeTitles
+    }
+}
+
+extension HomeViewController {
+
+    private func bindTableView() {
+        viewModel.items
+            .map { items -> [HomeCellType] in
+                items.map { .imageCell(ImageTableCellViewModel(imageModel: $0)) }
+            }
+            .bind(to: tableView.rx.items) { (tableView, index, cellType) -> UITableViewCell in
+                switch cellType {
+                case .imageCell(let cellViewModel):
+                    guard let imageCell = tableView.dequeueReusableCell(withIdentifier: ImageTableViewCell.reuseIdentifier, for: IndexPath(row: index, section: 0)) as? ImageTableViewCell else { return UITableViewCell() }
+                    imageCell.cellViewModel = cellViewModel
+                    return imageCell
+                }
+            }
+            .disposed(by: disposeBag)
+    }
+
+    enum HomeCellType {
+
+        case imageCell(_ cellViewModel: ImageTableCellViewModel)
     }
 }
 

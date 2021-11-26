@@ -5,8 +5,8 @@
 //  Created by Yasin Nazlican on 17.11.2021.
 //
 
-import Combine
 import Foundation
+import RxSwift
 
 public class MockNASAServices: NASAServices {
 
@@ -17,10 +17,10 @@ public class MockNASAServices: NASAServices {
     // MARK: Protocol Conformance
 
     public var searchImagesCallsCount: Int = 0
-    public var searchImagesResult: Result<NASAImageResponse, NetworkError> = .success(NASAImageResponse.mock)
+    public var searchImagesResult: Single<NASAImageResponse> = Single.just(NASAImageResponse.mock)
 
-    public func searchImages() -> AnyPublisher<NASAImageResponse, NetworkError> {
+    public func searchImages() -> Single<NASAImageResponse> {
         searchImagesCallsCount += 1
-        return searchImagesResult.publisher.eraseToAnyPublisher()
+        return searchImagesResult
     }
 }
