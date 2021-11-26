@@ -116,27 +116,31 @@ public final class HomeViewController: UIViewController {
     }
 }
 
+// MARK: Table View Binding
+
 extension HomeViewController {
 
     private func bindTableView() {
         viewModel.items
-            .map { items -> [HomeCellType] in
-                items.map { .imageCell(ImageTableCellViewModel(imageModel: $0)) }
+            .map { items -> [ImageTableCellViewModel] in
+                items.map { ImageTableCellViewModel(imageModel: $0) }
             }
-            .bind(to: tableView.rx.items) { (tableView, index, cellType) -> UITableViewCell in
-                switch cellType {
-                case .imageCell(let cellViewModel):
-                    guard let imageCell = tableView.dequeueReusableCell(withIdentifier: ImageTableViewCell.reuseIdentifier, for: IndexPath(row: index, section: 0)) as? ImageTableViewCell else { return UITableViewCell() }
-                    imageCell.cellViewModel = cellViewModel
-                    return imageCell
-                }
+            .bind(to: tableView.rx.items) { (tableView, index, cellViewModel) -> UITableViewCell in
+                guard let imageCell = tableView.dequeueReusableCell(withIdentifier: ImageTableViewCell.reuseIdentifier, for: IndexPath(row: index, section: 0)) as? ImageTableViewCell else { return UITableViewCell() }
+                imageCell.cellViewModel = cellViewModel
+                return imageCell
             }
             .disposed(by: disposeBag)
-    }
 
-    enum HomeCellType {
-
-        case imageCell(_ cellViewModel: ImageTableCellViewModel)
+        tableView
+            .rx
+            .modelSelected(ImageTableCellViewModel.self)
+            .subscribe(onNext: { [weak self] cellViewModel in
+                guard let self = self else { return }
+                self.delegate?.homeViewControllerDidSelect(self, image: cellViewModel.imageModel)
+                self.updateNavigationBarTitleStyle(largeTitles: false)
+            })
+            .disposed(by: disposeBag)
     }
 }
 
