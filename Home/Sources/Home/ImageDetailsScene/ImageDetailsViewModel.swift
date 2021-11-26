@@ -5,11 +5,12 @@
 //  Created by Yasin Nazlican on 20.11.2021.
 //
 
-import Combine
 import Core
 import CoreUI
 import Foundation
 import UIKit
+import RxSwift
+import RxCocoa
 
 public final class ImageDetailsViewModel {
 
@@ -20,7 +21,13 @@ public final class ImageDetailsViewModel {
 
     // MARK: Public Variables
 
-    @Published public private(set) var items = [ImageDetailsTableDataSource.Item]()
+    public var items: BehaviorRelay<[ImageDetailsCellType]> {
+        .init(value: [
+            ImageDetailsCellType.imageHeaderCell(imageModel.links.first?.percentageEncodedHref),
+            ImageDetailsCellType.plainTextCell(headerText),
+            ImageDetailsCellType.plainTextCell(descriptionText)
+        ])
+    }
     public var imageTitle: String { imageModel.info.first?.title ?? "" }
 
     // MARK: Life-Cycle
@@ -28,16 +35,6 @@ public final class ImageDetailsViewModel {
     public init(service: NASAServices, imageModel: NASAImage) {
         self.service = service
         self.imageModel = imageModel
-    }
-
-    // MARK: Public Methods
-
-    public func didLoad() {
-        items = [
-            .init(cell: .imageHeaderCell(imageModel.links.first?.percentageEncodedHref)),
-            .init(cell: .plainTextCell(headerText)),
-            .init(cell: .plainTextCell(descriptionText))
-        ]
     }
 }
 

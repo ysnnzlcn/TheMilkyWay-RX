@@ -38,10 +38,6 @@ public final class HomeViewModel {
     public func didLoad() {
         getImages()
     }
-
-    public func itemSelected(at index: Int) {
-//        state = .itemSelected(items[index])
-    }
 }
 
 // MARK: Networking

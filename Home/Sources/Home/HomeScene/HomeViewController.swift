@@ -121,6 +121,7 @@ public final class HomeViewController: UIViewController {
 extension HomeViewController {
 
     private func bindTableView() {
+        /// Bind data source
         viewModel.items
             .map { items -> [ImageTableCellViewModel] in
                 items.map { ImageTableCellViewModel(imageModel: $0) }
@@ -132,6 +133,7 @@ extension HomeViewController {
             }
             .disposed(by: disposeBag)
 
+        /// Bind selection
         tableView
             .rx
             .modelSelected(ImageTableCellViewModel.self)

@@ -5,10 +5,11 @@
 //  Created by Yasin Nazlican on 20.11.2021.
 //
 
-import Combine
 import Core
 import CoreUI
 import UIKit
+import RxSwift
+import RxCocoa
 
 public final class ImageDetailsViewController: UIViewController {
 
@@ -29,7 +30,7 @@ public final class ImageDetailsViewController: UIViewController {
     // MARK: Private Variables
 
     private let viewModel: ImageDetailsViewModel
-    private lazy var tableDataSource = ImageDetailsTableDataSource(tableView, viewModel)
+    private var disposeBag = DisposeBag()
     private lazy var tableDelegate = ImageDetailsTableDelegate(viewModel)
 
     // MARK: Life-Cycle
@@ -46,7 +47,7 @@ public final class ImageDetailsViewController: UIViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
         setupViews()
-        viewModel.didLoad()
+        bindTableView()
     }
 
     // MARK: Setup Views
@@ -56,16 +57,46 @@ public final class ImageDetailsViewController: UIViewController {
         title = viewModel.imageTitle
         view.backgroundColor = Constants.MainView.backgroundColor
 
-        /// Setup table view
-        tableView.dataSource = tableDataSource
-        tableView.delegate = tableDelegate
-
         /// Setup sub views
         view.addSubview(tableView)
 
         /// Add Constraints
         tableView.pinToSuperView()
     }
+
+    private func bindTableView() {
+        /// Bind data source
+        viewModel.items
+            .bind(to: tableView.rx.items) { (tableView, index, cellType) -> UITableViewCell in
+                let indexPath = IndexPath(row: index, section: 0)
+                var cell: UITableViewCell?
+                switch cellType {
+                case .imageHeaderCell(let url):
+                    let imageCell = tableView.dequeueReusableCell(withIdentifier: ImageHeaderTableViewCell.reuseIdentifier, for: indexPath) as? ImageHeaderTableViewCell
+                    imageCell?.url = url
+                    cell = imageCell
+
+                case .plainTextCell(let text):
+                    let imageCell = tableView.dequeueReusableCell(withIdentifier: PlainTextTableViewCell.reuseIdentifier, for: indexPath) as? PlainTextTableViewCell
+                    imageCell?.labelText = text
+                    cell = imageCell
+                }
+                return cell ?? UITableViewCell()
+            }
+            .disposed(by: disposeBag)
+
+        /// Bind delegate
+        tableView
+            .rx
+            .setDelegate(tableDelegate)
+            .disposed(by: disposeBag)
+    }
+}
+
+public enum ImageDetailsCellType: Equatable {
+
+    case imageHeaderCell(_ url: String?)
+    case plainTextCell(_ text: NSAttributedString)
 }
 
 // MARK: Constants

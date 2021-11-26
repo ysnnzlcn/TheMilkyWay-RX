@@ -27,7 +27,7 @@ final public class ImageDetailsTableDelegate: NSObject {
 extension ImageDetailsTableDelegate: UITableViewDelegate {
 
     public func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        switch viewModel.items[indexPath.row].cell {
+        switch viewModel.items.value[indexPath.row] {
         case .imageHeaderCell:
             return Constants.imageCellHeight
 
